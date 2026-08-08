@@ -1,111 +1,42 @@
 import numpy as np
 
-
 UNBURNED = 0
 BURNING = 1
 BURNED = 2
 
 
 class FireSimulation:
-
-    def __init__(
-        self,
-        risk,
-        fuel,
-        dryness,
-        density,
-        canopy,
-        slope,
-        aspect,
-        wind_speed,
-        wind_direction,
-        seed_row,
-        seed_col
-    ):
-
+    def __init__(self, risk, fuel, dryness, density, canopy, slope, aspect, wind_speed, wind_direction, seed_row, seed_col):
         self.risk = np.nan_to_num(risk, nan=0.0)
         self.fuel = np.nan_to_num(fuel, nan=0.0)
         self.dryness = np.nan_to_num(dryness, nan=0.0)
         self.density = np.nan_to_num(density, nan=0.0)
         self.canopy = np.nan_to_num(canopy, nan=0.0)
-
-        self.slope = np.nan_to_num(
-            slope,
-            nan=0.0
-        )
-
-        self.aspect = np.nan_to_num(
-            aspect,
-            nan=0.0
-        )
-
+        self.slope = np.nan_to_num(slope, nan=0.0)
+        self.aspect = np.nan_to_num(aspect, nan=0.0)
         self.wind_speed = wind_speed
         self.wind_direction = wind_direction
 
         self.rows, self.cols = risk.shape
+        self.state = np.zeros((self.rows, self.cols), dtype=np.uint8)
 
-        # 0 = unburned
-        # 1 = burning
-        # 2 = burned
+        self.burn_time = np.zeros((self.rows, self.cols),dtype=np.float32)
 
-        self.state = np.zeros(
-            (self.rows, self.cols),
-            dtype=np.uint8
-        )
-
-        # How long each cell has been burning
-
-        self.burn_time = np.zeros(
-            (self.rows, self.cols),
-            dtype=np.float32
-        )
-
-        # Start fire
-
-        if (
-            0 <= seed_row < self.rows
-            and
-            0 <= seed_col < self.cols
-        ):
-
-            self.state[
-                seed_row,
-                seed_col
-            ] = BURNING
+        if 0 <= seed_row < self.rows and 0 <= seed_col < self.cols:
+            self.state[seed_row, seed_col] = BURNING
 
     # =====================================
     # WIND EFFECT
     # =====================================
 
-    def wind_effect(
-        self,
-        row,
-        col,
-        neighbor_row,
-        neighbor_col
-    ):
-
+    def wind_effect(self, row, col, neighbor_row, neighbor_col):
         dy = neighbor_row - row
         dx = neighbor_col - col
 
-        # Direction from current cell
-        # toward neighboring cell
-
-        direction = (
-            np.degrees(
-                np.arctan2(dx, -dy)
-            )
-            + 360
-        ) % 360
-
-        difference = abs(
-            direction -
-            self.wind_direction
-        )
-
-        difference = min(
-            difference,
-            360 - difference
+        direction = (np.degrees(np.arctan2(dx, -dy)) + 360) % 360
+        difference = abs(direction - self.wind_direction)
+        difference = min(difference,
+360 - difference
         )
 
         alignment = np.cos(
